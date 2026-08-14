@@ -740,11 +740,6 @@ function isValidEmail_(email) {
 }
 
 
-function isValidEmail_(email) {
-  const value = String(email || '').trim().toLowerCase();
-  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
-}
-
 function teacherCode_() {
   let code = scriptProperty_('TEACHER_CODE');
   if (code.length >= 2 && code.charAt(0) === '"' && code.charAt(code.length - 1) === '"') code = code.slice(1, -1);
