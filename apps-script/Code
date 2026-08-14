@@ -17,8 +17,8 @@ const DASHBOARD_CACHE_SECONDS = 90;
 const DEFAULT_SESSION_SECONDS = 21600; // 6 ชั่วโมง
 const DEFAULT_LOGIN_MAX_ATTEMPTS = 5;
 const DEFAULT_LOGIN_LOCK_SECONDS = 900; // 15 นาที
-const DEFAULT_ALLOWED_ORIGIN = 'https://theerawa21.github.io';
-const PORTFOLIO_APP_URL = 'https://theerawa21.github.io/Test/tcas-portfolio/';
+const DEFAULT_ALLOWED_ORIGIN = 'https://tcas-portfolio1.vercel.app';
+const PORTFOLIO_APP_URL = 'https://tcas-portfolio1.vercel.app/';
 const SCHOOL_NAME = 'โรงเรียนเซนต์เทเรซา';
 
 const CONFIG = {
@@ -48,7 +48,6 @@ function doGet(e) {
     return jsonp_({ok:false, message:safeError_(err)}, e && e.parameter ? e.parameter.callback : '');
   }
 }
-
 function doPost(e) {
   let token = '';
   try {
@@ -98,7 +97,6 @@ function studentLogin_(id, citizenLast4) {
   const token = createSessionToken_('student', {student_id:s.student_id}, sessionSeconds_('STUDENT_SESSION_SECONDS'));
   return {student_token:token, student:publicStudent_(s), expires_in:sessionSeconds_('STUDENT_SESSION_SECONDS')};
 }
-
 function recordsResponse_(studentToken) {
   const s = requireStudentSession_(studentToken);
   return {ok:true, student:publicStudent_(s), records:getStudentRecords_(s).map(publicRecord_)};
@@ -148,7 +146,6 @@ function lookupStudent_(id) {
   if (!sh) throw new Error('ไม่พบชีตรายชื่อนักเรียน');
   const last = sh.getLastRow();
   if (last < 4) return null;
-
   const found = sh.getRange(4, 3, last - 3, 1).createTextFinder(id).matchEntireCell(true).findNext();
   if (!found) return null;
 
@@ -198,7 +195,6 @@ function getStudentRecords_(student) {
     const rows = sh.getLastRow() - 1;
     const values = sh.getRange(2, 1, rows, cfg.headers.length).getDisplayValues();
     const notes = sh.getRange(2, 1, rows, 1).getNotes();
-
     values.forEach((r, i) => {
       if (String(r[0] || '') !== student.citizen_id) return;
       let entryId = notes[i][0] || '';
@@ -247,8 +243,7 @@ function saveRecord_(p) {
 }
 
 function updateRecord_(p) {
-  const student = requireStudentSession_(p.student_token);
-  const type = mustType_(p.type);
+  const student = requireStudentSession_(p.student_token);  const type = mustType_(p.type);
   const cfg = CONFIG[type];
   validate_(type, p);
   const entryId = String(p.entry_id || '');
@@ -297,8 +292,7 @@ function deleteRecord_(p) {
     }
     throw new Error('ไม่พบรายการที่ต้องการลบ');
   } finally {
-    lock.releaseLock();
-  }
+    lock.releaseLock();  }
 }
 
 function findEntryRow_(sh, entryId) {
@@ -343,11 +337,10 @@ function uploadEvidence_(s, type, entryId, year, images) {
 
   const ss = SpreadsheetApp.openById(DATA_SPREADSHEET_ID);
   const sh = ss.getSheetByName(ATTACHMENT_SHEET);
-  if (!sh) throw new Error('ไม่พบชีต attachments กรุณารัน setupSheets(…4915 tokens truncated…EET_ID).getSheetByName(STUDENT_SHEET_NAME);
+  if (!sh) throw new Error('ไม่พบชีต attachments กรุณารัน setupSheets() ก่อน');
   if (!sh) throw new Error('ไม่พบชีตรายชื่อนักเรียน');
   const last = sh.getLastRow();
   if (last < 4) return [];
-
   return sh.getRange(4, 2, last - 3, 13).getDisplayValues().map(r => ({
     citizen_id:String(r[0] || '').trim(),
     student_id:String(r[1] || '').trim(),
@@ -397,8 +390,7 @@ function buildReviewCountMap_() {
 
 function summarizeReviewCounts_(recordCounts, reviewByType, allowedTypes) {
   const summary = {pending:0, approved:0, needs_revision:0, resubmitted:0};
-  Object.keys(CONFIG).forEach(type => {
-    if (allowedTypes && allowedTypes.indexOf(type) === -1) return;
+  Object.keys(CONFIG).forEach(type => {    if (allowedTypes && allowedTypes.indexOf(type) === -1) return;
     const records = Number(recordCounts[type] || 0);
     const reviews = reviewByType[type] || {};
     summary.approved += Number(reviews.approved || 0);
@@ -447,8 +439,7 @@ function teacherDashboardData_() {
   const submitted = list.filter(s => Number(s.total_records || 0) > 0).length;
   const totalRecords = list.reduce((sum, s) => sum + Number(s.total_records || 0), 0);
 
-  return {
-    generated_at:Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss'),
+  return {    generated_at:Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss'),
     total_students:list.length,
     submitted_students:submitted,
     not_submitted_students:list.length - submitted,
@@ -497,8 +488,7 @@ function setupSheets_() {
     }
   });
 
-  let att = ss.getSheetByName(ATTACHMENT_SHEET);
-  if (!att) att = ss.insertSheet(ATTACHMENT_SHEET);
+  let att = ss.getSheetByName(ATTACHMENT_SHEET);  if (!att) att = ss.insertSheet(ATTACHMENT_SHEET);
   if (att.getMaxColumns() < ATT_HEADERS.length) att.insertColumnsAfter(att.getMaxColumns(), ATT_HEADERS.length - att.getMaxColumns());
 
   const ah = att.getRange(1, 1, 1, ATT_HEADERS.length);
@@ -547,8 +537,7 @@ function setupConfig_() {
   if (!currentOrigin) updates.ALLOWED_ORIGIN = DEFAULT_ALLOWED_ORIGIN;
   if (Object.keys(updates).length) props.setProperties(updates, false);
 
-  const errors = [];
-  if (!teacherCode) errors.push('ยังไม่ได้ตั้งค่า TEACHER_CODE ใน Script Properties');
+  const errors = [];  if (!teacherCode) errors.push('ยังไม่ได้ตั้งค่า TEACHER_CODE ใน Script Properties');
   if (teacherCode && teacherCode.length < 8) errors.push('TEACHER_CODE ควรมีอย่างน้อย 8 ตัวอักษร');
   const secret = String(props.getProperty('SESSION_SECRET') || '').trim();
   if (secret.length < 32) errors.push('SESSION_SECRET ต้องมีอย่างน้อย 32 ตัวอักษร');
@@ -597,8 +586,7 @@ function normalizeDigits_(value) {
   return String(value || '').replace(/\D/g, '');
 }
 
-function hmac_(value) {
-  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(value), sessionSecret_())).replace(/=+$/g, '');
+function hmac_(value) {  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(value), sessionSecret_())).replace(/=+$/g, '');
 }
 
 function secureKey_(value) {
@@ -647,8 +635,7 @@ function requireSession_(kind, token, expiredMessage) {
   } catch (err) {
     if (err && err.message === expiredMessage) throw err;
     throw new Error(expiredMessage);
-  }
-}
+  }}
 
 function storeSession_(kind, token, data, seconds) {
   if (!validSessionToken_(kind, token)) return;
@@ -697,8 +684,7 @@ function throwLoginFailure_(state, invalidMessage) {
 }
 
 function clearLoginFailures_(rateKey) {
-  CacheService.getScriptCache().remove(loginRateCacheKey_(rateKey));
-}
+  CacheService.getScriptCache().remove(loginRateCacheKey_(rateKey));}
 
 function normalize_(v) {
   return v === null || v === undefined ? '' : String(v).trim();
@@ -738,3 +724,224 @@ function safeError_(e) {
   return e && e.message ? String(e.message) : 'เกิดข้อผิดพลาดของระบบ';
 }
 
+function isValidEmail_(email) {
+  const value = String(email || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+
+function isValidEmail_(email) {
+  const value = String(email || '').trim().toLowerCase();
+  return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+}
+
+function teacherCode_() {
+  let code = scriptProperty_('TEACHER_CODE');
+  if (code.length >= 2 && code.charAt(0) === '"' && code.charAt(code.length - 1) === '"') code = code.slice(1, -1);
+  return code.trim();
+}
+
+function teacherLogin_(teacherCode) {
+  const rateKey = 'teacher:' + secureKey_('shared');
+  requireLoginAllowed_(rateKey);
+  if (!teacherCode_() || !secureEqual_(String(teacherCode || '').trim(), teacherCode_())) {
+    const rate = recordLoginFailure_(rateKey);
+    throwLoginFailure_(rate, 'รหัสสำหรับครูไม่ถูกต้อง');
+  }
+  clearLoginFailures_(rateKey);
+  const token = createSessionToken_('teacher', {role:'teacher'}, sessionSeconds_('TEACHER_SESSION_SECONDS'));
+  return {teacher_token:token, expires_in:sessionSeconds_('TEACHER_SESSION_SECONDS')};
+}
+
+function teacherDashboardResponse_(teacherToken, forceRefresh) {
+  requireSession_('teacher', teacherToken, 'เซสชันครูหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+  const key = 'teacher-dashboard:v1';
+  if (!String(forceRefresh || '') && !forceRefresh) {
+    const cached = CacheService.getScriptCache().get(key);
+    if (cached) {
+      try { return JSON.parse(cached); } catch (_) {}
+    }
+  }
+  const data = teacherDashboardData_();
+  try { CacheService.getScriptCache().put(key, JSON.stringify(data), DASHBOARD_CACHE_SECONDS); } catch (_) {}
+  return data;
+}
+
+function teacherStudentResponse_(teacherToken, studentId) {
+  requireSession_('teacher', teacherToken, 'เซสชันครูหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+  const student = mustStudent_(studentId);
+  return {student:teacherPublicStudent_(student), records:getStudentRecords_(student).map(publicRecord_)};
+}
+
+function teacherLogout_(teacherToken) {
+  removeSession_('teacher', teacherToken);
+  return {success:true};
+}
+
+function teacherReviewResponse_(teacherToken, p) {
+  requireSession_('teacher', teacherToken, 'เซสชันครูหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+  const student = mustStudent_(p.student_id);
+  const entryId = String(p.entry_id || '').trim();
+  const decision = String(p.decision || '').trim();
+  if (!entryId) throw new Error('ไม่พบรหัสรายการ');
+  if (decision !== 'approved' && decision !== 'needs_revision') throw new Error('ผลการตรวจไม่ถูกต้อง');
+  if (decision === 'needs_revision' && !String(p.feedback || '').trim()) throw new Error('กรุณาระบุข้อเสนอแนะที่ต้องแก้ไข');
+  if (decision === 'needs_revision' && !String(p.due_date || '').trim()) throw new Error('กรุณากำหนดวันส่งแก้ไข');
+
+  const meta = findEntryMeta_(entryId, student.citizen_id);
+  if (!meta) throw new Error('ไม่พบรายการที่ต้องการตรวจ');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const sh = getReviewSheet_();
+    const existing = findReviewRow_(sh, entryId, student.citizen_id);
+    const current = existing ? reviewFromRow_(sh.getRange(existing, 1, 1, REVIEW_HEADERS.length).getDisplayValues()[0]) : null;
+    const expected = String(p.expected_updated_at || '');
+    if (expected && current && String(current.updated_at || '') !== expected) throw new Error('ข้อมูลล่าสุดเปลี่ยนแปลงแล้ว กรุณาเปิดรายการใหม่');
+    const requestId = String(p.request_id || '');
+    if (requestId && current && current.request_id === requestId) return {success:true, review:current, email_message:'บันทึกผลการตรวจแล้ว'};
+    const now = new Date().toISOString();
+    const review = {
+      review_id:current ? current.review_id : Utilities.getUuid(),
+      entry_id:entryId,
+      citizen_id:student.citizen_id,
+      student_id:student.student_id,
+      type:meta.type,
+      feedback:String(p.feedback || '').trim(),
+      due_date:decision === 'needs_revision' ? String(p.due_date || '').trim() : '',
+      status:decision,
+      created_at:current ? current.created_at : now,
+      updated_at:now,
+      resubmitted_at:current ? current.resubmitted_at : '',
+      request_id:requestId
+    };
+    const values = [REVIEW_HEADERS.map(h => review[h] || '')];
+    if (existing) sh.getRange(existing, 1, 1, REVIEW_HEADERS.length).setValues(values);
+    else sh.getRange(Math.max(sh.getLastRow() + 1, 2), 1, 1, REVIEW_HEADERS.length).setValues(values);
+    clearTeacherDashboardCache_();
+    return {success:true, review:review, email_message:decision === 'approved' ? 'บันทึกผลผ่านแล้ว' : 'ส่งข้อเสนอแนะให้นักเรียนแล้ว'};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getReviewSheet_() {
+  const ss = SpreadsheetApp.openById(DATA_SPREADSHEET_ID);
+  let sh = ss.getSheetByName(REVIEW_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(REVIEW_SHEET);
+    sh.getRange(1, 1, 1, REVIEW_HEADERS.length).setValues([REVIEW_HEADERS]);
+  }
+  return sh;
+}
+
+function findReviewRow_(sh, entryId, citizenId) {
+  const last = sh.getLastRow();
+  if (last < 2) return 0;
+  const rows = sh.getRange(2, 1, last - 1, REVIEW_HEADERS.length).getDisplayValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][1] || '') === entryId && (!citizenId || String(rows[i][2] || '') === citizenId)) return i + 2;
+  }
+  return 0;
+}
+
+function reviewFromRow_(r) {
+  const out = {};
+  REVIEW_HEADERS.forEach((h, i) => out[h] = String(r[i] || ''));
+  return out;
+}
+
+function getAttachmentMap_(citizenId) {
+  const map = {};
+  const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(ATTACHMENT_SHEET);
+  if (!sh || sh.getLastRow() < 2) return map;
+  sh.getRange(2, 1, sh.getLastRow() - 1, ATT_HEADERS.length).getDisplayValues().forEach(r => {
+    if (String(r[2] || '') !== String(citizenId || '')) return;
+    const item = {};
+    ATT_HEADERS.forEach((h, i) => item[h] = String(r[i] || ''));
+    if (!map[item.entry_id]) map[item.entry_id] = [];
+    map[item.entry_id].push(item);
+  });
+  return map;
+}
+
+function getReviewMap_(citizenId) {
+  const map = {};
+  const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(REVIEW_SHEET);
+  if (!sh || sh.getLastRow() < 2) return map;
+  sh.getRange(2, 1, sh.getLastRow() - 1, REVIEW_HEADERS.length).getDisplayValues().forEach(r => {
+    if (String(r[2] || '') !== String(citizenId || '')) return;
+    const item = reviewFromRow_(r);
+    map[item.entry_id] = item;
+  });
+  return map;
+}
+
+function findEntryMeta_(entryId, citizenId) {
+  for (const type of Object.keys(CONFIG)) {
+    const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(CONFIG[type].sheet);
+    if (!sh) continue;
+    const row = findEntryRow_(sh, entryId);
+    if (row && (!citizenId || String(sh.getRange(row, 1).getDisplayValue()) === String(citizenId))) return {type:type, sh:sh, row:row};
+  }
+  return null;
+}
+
+function markReviewResubmitted_(entryId, citizenId) {
+  const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(REVIEW_SHEET);
+  if (!sh) return;
+  const row = findReviewRow_(sh, entryId, citizenId);
+  if (!row) return;
+  const r = reviewFromRow_(sh.getRange(row, 1, 1, REVIEW_HEADERS.length).getDisplayValues()[0]);
+  r.status = 'resubmitted';
+  r.resubmitted_at = new Date().toISOString();
+  r.updated_at = r.resubmitted_at;
+  sh.getRange(row, 1, 1, REVIEW_HEADERS.length).setValues([REVIEW_HEADERS.map(h => r[h] || '')]);
+}
+
+function deleteAttachmentsForEntry_(entryId, citizenId) {
+  const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(ATTACHMENT_SHEET);
+  if (!sh || sh.getLastRow() < 2) return;
+  for (let row = sh.getLastRow(); row >= 2; row--) {
+    const r = sh.getRange(row, 1, 1, ATT_HEADERS.length).getDisplayValues()[0];
+    if (String(r[1] || '') !== String(entryId || '') || (citizenId && String(r[2] || '') !== String(citizenId))) continue;
+    if (r[6]) { try { DriveApp.getFileById(r[6]).setTrashed(true); } catch (_) {} }
+    sh.deleteRow(row);
+  }
+}
+
+function deleteReviewForEntry_(entryId, citizenId) {
+  const sh = SpreadsheetApp.openById(DATA_SPREADSHEET_ID).getSheetByName(REVIEW_SHEET);
+  if (!sh || sh.getLastRow() < 2) return;
+  const row = findReviewRow_(sh, entryId, citizenId);
+  if (row) sh.deleteRow(row);
+}
+
+function getOrCreateFolder_(parent, name) {
+  const safe = safeFolder_(name);
+  const it = parent.getFoldersByName(safe);
+  return it.hasNext() ? it.next() : parent.createFolder(safe);
+}
+
+function safeFolder_(name) {
+  return String(name || 'ไม่ระบุ').replace(/[\\/:*?"<>|#%]/g, '_').slice(0, 120) || 'ไม่ระบุ';
+}
+
+function getAllActiveStudents_() {
+  const sh = SpreadsheetApp.openById(STUDENT_SPREADSHEET_ID).getSheetByName(STUDENT_SHEET_NAME);
+  if (!sh || sh.getLastRow() < 4) return [];
+  return sh.getRange(4, 2, sh.getLastRow() - 3, 13).getDisplayValues().map(r => ({
+    citizen_id:String(r[0] || '').trim(),
+    student_id:String(r[1] || '').trim(),
+    class_room:String(r[2] || '').trim(),
+    title:String(r[3] || '').trim(),
+    first_name:String(r[4] || '').trim(),
+    last_name:String(r[5] || '').trim(),
+    status:String(r[10] || '').trim(),
+    email:String(r[12] || '').trim()
+  })).filter(s => s.student_id && (!s.status || s.status === 'กำลังศึกษาอยู่'));
+}
+
+function clearTeacherDashboardCache_() {
+  CacheService.getScriptCache().remove('teacher-dashboard:v1');
+}
