@@ -340,19 +340,34 @@ function uploadEvidence_(s, type, entryId, year, images) {
   const ss = SpreadsheetApp.openById(DATA_SPREADSHEET_ID);
   const sh = ss.getSheetByName(ATTACHMENT_SHEET);
   if (!sh) throw new Error('ไม่พบชีต attachments กรุณารัน setupSheets() ก่อน');
-  if (!sh) throw new Error('ไม่พบชีตรายชื่อนักเรียน');
-  const last = sh.getLastRow();
-  if (last < 4) return [];
-  return sh.getRange(4, 2, last - 3, 13).getDisplayValues().map(r => ({
-    citizen_id:String(r[0] || '').trim(),
-    student_id:String(r[1] || '').trim(),
-    class_room:String(r[2] || '').trim(),
-    title:String(r[3] || '').trim(),
-    first_name:String(r[4] || '').trim(),
-    last_name:String(r[5] || '').trim(),
-    status:String(r[10] || '').trim(),
-    email:String(r[12] || '').trim()
-  })).filter(s => s.student_id && (!s.status || s.status === 'กำลังศึกษาอยู่'));
+
+  const out = [];
+  images.forEach(image => {
+    const raw = String(image && image.data || '');
+    const match = raw.match(/^data:([^;]+);base64,(.*)$/);
+    if (!match) throw new Error('รูปภาพไม่อยู่ในรูปแบบที่รองรับ');
+    const mime = String(match[1] || 'image/jpeg');
+    const bytes = Utilities.base64Decode(match[2]);
+    const name = safeFolder_(String(image.name || 'evidence.jpg'));
+    const file = typeFolder.createFile(Utilities.newBlob(bytes, mime, name));
+    const item = {
+      attachment_id:Utilities.getUuid(),
+      entry_id:entryId,
+      citizen_id:s.citizen_id,
+      student_id:s.student_id,
+      class_room:s.class_room,
+      type:type,
+      file_id:file.getId(),
+      file_name:file.getName(),
+      mime_type:file.getMimeType(),
+      drive_url:file.getUrl(),
+      created_at:new Date().toISOString()
+    };
+    const row = Math.max(sh.getLastRow() + 1, 2);
+    sh.getRange(row, 1, 1, ATT_HEADERS.length).setValues([ATT_HEADERS.map(h => item[h] || '')]);
+    out.push(item);
+  });
+  return out;
 }
 
 function buildRecordCountMap_() {
