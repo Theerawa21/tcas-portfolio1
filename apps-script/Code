@@ -50,12 +50,14 @@ function doGet(e) {
 }
 function doPost(e) {
   let token = '';
+  let requestOrigin = '';
   try {
     const p = (e && e.parameter) || {};
     const action = String(p.action || '').trim();
     const payload = JSON.parse(p.payload || '{}');
     token = String(payload._token || '');
-    requireAllowedOrigin_(p.origin);
+    requestOrigin = String(p.origin || '').trim();
+    requireAllowedOrigin_(requestOrigin);
     let result;
 
     if (action === 'studentLogin') result = studentLogin_(payload.student_id, payload.citizen_last4);
@@ -72,9 +74,9 @@ function doPost(e) {
     else if (action === 'teacherLogout') result = teacherLogout_(payload.teacher_token);
     else throw new Error('คำสั่งไม่ถูกต้อง');
 
-    return postMessageOutput_({ok:true, token:token, result:result});
+    return postMessageOutput_({_origin:requestOrigin, ok:true, token:token, result:result});
   } catch (err) {
-    return postMessageOutput_({ok:false, token:token, message:safeError_(err)});
+    return postMessageOutput_({_origin:requestOrigin, ok:false, token:token, message:safeError_(err)});
   }
 }
 
@@ -700,26 +702,34 @@ function validAllowedOrigin_(origin) {
   return /^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(String(origin || '').trim());
 }
 
+function isAllowedRequestOrigin_(origin) {
+  const value = String(origin || '').trim();
+  const configured = scriptProperty_('ALLOWED_ORIGIN');
+  if (validAllowedOrigin_(configured) && value === configured) return true;
+  return /^https:\/\/tcas-portfolio1(?:-[a-z0-9-]+)?-theerawa21s-projects\.vercel\.app$/i.test(value);
+}
+
 function requireAllowedOrigin_(requestOrigin) {
-  const allowedOrigin = scriptProperty_('ALLOWED_ORIGIN');
-  if (!validAllowedOrigin_(allowedOrigin)) throw new Error('ยังไม่ได้ตั้งค่า ALLOWED_ORIGIN ที่ถูกต้องใน Script Properties');
-  if (String(requestOrigin || '').trim() !== allowedOrigin) throw new Error('เว็บไซต์ต้นทางไม่ได้รับอนุญาต กรุณาตรวจ ALLOWED_ORIGIN');
-  return allowedOrigin;
+  const origin = String(requestOrigin || '').trim();
+  const configured = scriptProperty_('ALLOWED_ORIGIN');
+  if (!validAllowedOrigin_(configured)) throw new Error('ยังไม่ได้ตั้งค่า ALLOWED_ORIGIN ที่ถูกต้องใน Script Properties');
+  if (!isAllowedRequestOrigin_(origin)) throw new Error('เว็บไซต์ต้นทางไม่ได้รับอนุญาต กรุณาตรวจ ALLOWED_ORIGIN');
+  return origin;
 }
 
 function postMessageOutput_(obj) {
-  let allowedOrigin = scriptProperty_('ALLOWED_ORIGIN');
+  const requestedOrigin = String(obj._origin || '').trim();
+  let targetOrigin = isAllowedRequestOrigin_(requestedOrigin) ? requestedOrigin : scriptProperty_('ALLOWED_ORIGIN');
   let response = Object.assign({source:'tcas-apps-script'}, obj);
-  if (!validAllowedOrigin_(allowedOrigin)) {
-    // ส่งเฉพาะ configuration error ที่ไม่เปิดเผยข้อมูล เพื่อไม่ให้ frontend รอจน timeout
-    allowedOrigin = '*';
+  delete response._origin;
+  if (!validAllowedOrigin_(targetOrigin)) {
+    targetOrigin = '*';
     response = {source:'tcas-apps-script', ok:false, token:String(obj.token || ''), message:'ยังไม่ได้ตั้งค่า ALLOWED_ORIGIN ที่ถูกต้องใน Script Properties'};
   }
   const data = JSON.stringify(response).replace(/</g, '\\u003c');
-  const html = '<!doctype html><meta charset="utf-8"><script>window.top.postMessage(' + data + ',' + JSON.stringify(allowedOrigin) + ');<\/script>';
+  const html = '<!doctype html><meta charset="utf-8"><script>window.top.postMessage(' + data + ',' + JSON.stringify(targetOrigin) + ');<\\/script>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
-
 function safeError_(e) {
   return e && e.message ? String(e.message) : 'เกิดข้อผิดพลาดของระบบ';
 }
