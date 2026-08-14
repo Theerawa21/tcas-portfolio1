@@ -727,7 +727,7 @@ function postMessageOutput_(obj) {
     response = {source:'tcas-apps-script', ok:false, token:String(obj.token || ''), message:'ยังไม่ได้ตั้งค่า ALLOWED_ORIGIN ที่ถูกต้องใน Script Properties'};
   }
   const data = JSON.stringify(response).replace(/</g, '\\u003c');
-  const html = '<!doctype html><meta charset="utf-8"><script>window.top.postMessage(' + data + ',' + JSON.stringify(targetOrigin) + ');<\\/script>';
+  const html = '<!doctype html><meta charset="utf-8"><script>window.top.postMessage(' + data + ',' + JSON.stringify(targetOrigin) + ');<\/script>';
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 function safeError_(e) {
